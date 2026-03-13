@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Cielo de Géneros</title>
+  <style>
+    :root {
+      --bg1: #0f172a;
+      --bg2: #1e293b;
+      --panel: rgba(15, 23, 42, 0.78);
+      --text: #f8fafc;
+      --muted: #cbd5e1;
+      --accent: #f59e0b;
+      --accent2: #38bdf8;
+      --danger: #ef4444;
+      --good: #22c55e;
+      --shadow: 0 18px 45px rgba(0,0,0,0.35);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at top, #1e293b, #020617 72%);
+      color: var(--text);
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      touch-action: none;
+    }
+
+    #app {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(180deg, #60a5fa 0%, #93c5fd 55%, #e0f2fe 100%);
+    }
+
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      pointer-events: none;
+    }
+
+    .overlay[hidden] {
+      display: none !important;
+    }
+
+    .panel {
+      width: min(920px, 100%);
+      max-height: min(92vh, 920px);
+      overflow: auto;
+      background: var(--panel);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.16);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      padding: clamp(18px, 3vw, 28px);
+      pointer-events: auto;
+    }
+
+    h1, h2, h3, p {
+      margin: 0;
+    }
+
+    .title {
+      font-size: clamp(2rem, 5vw, 4rem);
+      line-height: 1;
+      letter-spacing: 0.02em;
+      text-align: center;
+      margin-bottom: 10px;
+      text-shadow: 0 3px 18px rgba(0,0,0,0.25);
+    }
+
+    .subtitle {
+      text-align: center;
+      color: var(--muted);
+      font-size: clamp(0.95rem, 2vw, 1.1rem);
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+
+    .rules {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin: 18px 0 24px;
+    }
+
+    .rule {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .rule strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.98rem;
+    }
+
+    .difficulty-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin-top: 10px;
+    }
+
+    button {
+      appearance: none;
+      border: none;
+      border-radius: 16px;
+      padding: 14px 16px;
+      font: inherit;
+      font-weight: 700;
+      color: white;
+      cursor: pointer;
+      transition: transform 0.14s ease, filter 0.14s ease, box-shadow 0.14s ease;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.25);
+    }
+
+    button:hover, button:focus-visible {
+      transform: translateY(-2px) scale(1.01);
+      filter: brightness(1.05);
+      outline: none;
+    }
+
+    button:active {
+      transform: translateY(1px) scale(0.99);
+    }
+
+    .btn-a1 { background: linear-gradient(135deg, #22c55e, #16a34a); }
+    .btn-b1 { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+    .btn-b2 { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+    .btn-c1 { background: linear-gradient(135deg, #f97316, #ea580c); }
+    .btn-secondary { background: linear-gradient(135deg, #64748b, #475569); }
+
+    .small-note {
+      margin-top: 14px;
+      color: #e2e8f0;
+      font-size: 0.92rem;
+      line-height: 1.45;
+      opacity: 0.92;
+    }
+
+    .hud {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: max(10px, env(safe-area-inset-top)) 12px 12px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: space-between;
+      pointer-events: none;
+    }
+
+    .hud-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      background: rgba(15, 23, 42, 0.58);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.16);
+      box-shadow: 0 10px 28px rgba(0,0,0,0.16);
+      border-radius: 999px;
+      padding: 9px 14px;
+      font-weight: 700;
+      font-size: clamp(0.82rem, 1.7vw, 1rem);
+    }
+
+    .target-pill {
+      min-width: 180px;
+      text-align: center;
+    }
+
+    .controls-hint {
+      position: absolute;
+      bottom: max(10px, env(safe-area-inset-bottom));
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(15, 23, 42, 0.45);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      color: #e2e8f0;
+      backdrop-filter: blur(8px);
+      pointer-events: none;
+      text-align: center;
+      max-width: calc(100vw - 22px);
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .stat-card {
+      border-radius: 14px;
+      padding: 16px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .stat-card .label {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin-bottom: 4px;
+    }
+
+    .stat-card .value {
+      font-size: 1.8rem;
+      font-weight: 800;
+    }
+
+    .mistakes {
+      margin-top: 18px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 16px;
+    }
+
+    .mistakes h3 {
+      margin-bottom: 10px;
+    }
+
+    .mistake-list {
+      margin: 0;
+      padding-left: 1.15rem;
+      color: #f8fafc;
+      line-height: 1.55;
+    }
+
+    .mistake-list li + li {
+      margin-top: 4px;
+    }
+
+    .empty-review {
+      color: #bbf7d0;
+      font-weight: 700;
+    }
+
+    .footer-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 20px;
+      justify-content: center;
+    }
+
+    .legend {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 14px;
+      color: #e2e8f0;
+      font-size: 0.95rem;
+    }
+
+    .swatch {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .blue { background: #60a5fa; }
+    .pink { background: #f9a8d4; }
+
+    @media (max-width: 640px) {
+      .panel {
+        padding: 16px;
+      }
+      .controls-hint {
+        font-size: 0.76rem;
+        padding: 8px 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <canvas id="gameCanvas" aria-label="Juego Cielo de Géneros"></canvas>
+
+    <div id="hud" class="hud" hidden>
+      <div class="hud-group">
+        <div id="scorePill" class="pill">Puntuación: 0</div>
+        <div id="comboPill" class="pill">Combo: x1</div>
+        <div id="livesPill" class="pill">Vidas: 3</div>
+      </div>
+      <div class="hud-group">
+        <div id="targetPill" class="pill target-pill">Objetivo: Masculino</div>
+      </div>
+    </div>
+
+    <div id="controlsHint" class="controls-hint" hidden>
+      ← → / A D para mover · Espacio, clic o toque para disparar
+    </div>
+
+    <div id="startScreen" class="overlay">
+      <div class="panel">
+        <h1 class="title">Cielo de Géneros</h1>
+        <p class="subtitle">
+          Dispara solo a los sustantivos del género correcto según el color del cielo. Cielo azul: masculino. Cielo rosa: femenino.
+        </p>
+
+        <div class="legend">
+          <span class="swatch"><span class="dot blue"></span> Azul = masculino</span>
+          <span class="swatch"><span class="dot pink"></span> Rosa = femenino</span>
+        </div>
+
+        <div class="rules">
+          <div class="rule">
+            <strong>Cómo ganar puntos</strong>
+            Acerta el género y encadena golpes correctos para aumentar el multiplicador de combo.
+          </div>
+          <div class="rule">
+            <strong>Cuándo pierdes vidas</strong>
+            Pierdes una vida si disparas un género incorrecto o si un sustantivo objetivo toca el suelo.
+          </div>
+          <div class="rule">
+            <strong>Controles</strong>
+            Usa teclado, ratón o pantalla táctil. El juego es compatible con móvil, tableta y ordenador.
+          </div>
+        </div>
+
+        <h2 style="text-align:center; margin-bottom: 14px;">Elige una dificultad</h2>
+        <div class="difficulty-grid">
+          <button class="btn-a1" data-difficulty="principiante">Principiante (A1-A2)</button>
+          <button class="btn-b1" data-difficulty="intermedio">Intermedio (B1)</button>
+          <button class="btn-b2" data-difficulty="avanzado">Avanzado (B2)</button>
+          <button class="btn-c1" data-difficulty="experto">Experto (C1)</button>
+        </div>
+
+        <p class="small-note">
+          Regla especial: <strong>agua</strong> cuenta como femenino en la lógica del juego.
+        </p>
+      </div>
+    </div>
+
+    <div id="gameOverScreen" class="overlay" hidden>
+      <div class="panel">
+        <h1 class="title" style="font-size: clamp(2rem, 4vw, 3rem);">Fin del juego</h1>
+        <p class="subtitle">Repasa tus resultados y vuelve a intentarlo.</p>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="label">Puntuación final</div>
+            <div id="finalScore" class="value">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Mejor combo</div>
+            <div id="bestCombo" class="value">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">Dificultad</div>
+            <div id="finalDifficulty" class="value" style="font-size:1.3rem;">Principiante</div>
+          </div>
+        </div>
+
+        <div class="mistakes">
+          <h3>Review Your Mistakes</h3>
+          <div id="mistakeContent"></div>
+          <p id="aguaNote" class="small-note" hidden>
+            Note: 'Agua' is feminine but uses the masculine article 'el' in the singular.
+          </p>
+        </div>
+
+        <div class="footer-actions">
+          <button id="playAgainBtn" class="btn-secondary">Jugar otra vez</button>
+          <button id="backToMenuBtn" class="btn-b1">Volver al menú</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const canvas = document.getElementById('gameCanvas');
+      const ctx = canvas.getContext('2d');
+
+      const hud = document.getElementById('hud');
+      const controlsHint = document.getElementById('controlsHint');
+      const startScreen = document.getElementById('startScreen');
+      const gameOverScreen = document.getElementById('gameOverScreen');
+      const scorePill = document.getElementById('scorePill');
+      const comboPill = document.getElementById('comboPill');
+      const livesPill = document.getElementById('livesPill');
+      const targetPill = document.getElementById('targetPill');
+      const finalScoreEl = document.getElementById('finalScore');
+      const bestComboEl = document.getElementById('bestCombo');
+      const finalDifficultyEl = document.getElementById('finalDifficulty');
+      const mistakeContent = document.getElementById('mistakeContent');
+      const aguaNote = document.getElementById('aguaNote');
+      const playAgainBtn = document.getElementById('playAgainBtn');
+      const backToMenuBtn = document.getElementById('backToMenuBtn');
+
+      const TWO_PI = Math.PI * 2;
+      const COLORS = {
+        mascSkyTop: '#60a5fa',
+        mascSkyBottom: '#e0f2fe',
+        femSkyTop: '#f9a8d4',
+        femSkyBottom: '#fde7f3',
+        ground: '#14532d',
+        ship: '#f59e0b',
+        projectile: '#f8fafc',
+        textDark: '#0f172a',
+        textLight: '#f8fafc',
+        danger: '#ef4444',
+        good: '#22c55e'
+      };
+
+      const WORD_POOLS = {
+        a1: [
+          ['gato','m'], ['gata','f'], ['perro','m'], ['casa','f'], ['libro','m'], ['mesa','f'], ['niño','m'], ['niña','f'],
+          ['día','m'], ['noche','f'], ['pan','m'], ['leche','f'], ['agua','f'], ['puerta','f'], ['árbol','m'], ['flor','f'],
+          ['coche','m'], ['bicicleta','f'], ['teléfono','m'], ['computadora','f'], ['dinero','m'], ['música','f'],
+          ['deporte','m'], ['escuela','f'], ['profesor','m'], ['profesora','f'], ['amigo','m'], ['amiga','f'],
+          ['hermano','m'], ['hermana','f'], ['padre','m'], ['madre','f'], ['abuelo','m'], ['abuela','f'], ['tío','m'], ['tía','f'],
+          ['primo','m'], ['prima','f'], ['corazón','m'], ['cabeza','f'], ['brazo','m'], ['mano','f'], ['pie','m'], ['pierna','f'],
+          ['ojo','m'], ['oreja','f'], ['diente','m'], ['nariz','f'], ['pelo','m'], ['boca','f'], ['color','m'], ['ropa','f'],
+          ['zapato','m'], ['camisa','f']
+        ],
+        a2: [
+          ['problema','m'], ['solución','f'], ['viaje','m'], ['maleta','f'], ['hotel','m'], ['habitación','f'], ['cama','f'],
+          ['almohada','f'], ['sábana','f'], ['toalla','f'], ['espejo','m'], ['jabón','m'], ['champú','m'], ['cepillo','m'],
+          ['peine','m'], ['lápiz','m'], ['pluma','f'], ['cuaderno','m'], ['papel','m'], ['escritorio','m'], ['silla','f'],
+          ['ventana','f'], ['pared','f'], ['techo','m'], ['suelo','m'], ['lámpara','f'], ['reloj','m'], ['calendario','m'],
+          ['hora','f'], ['minuto','m'], ['segundo','m'], ['semana','f'], ['mes','m'], ['año','m'], ['estación','f'],
+          ['primavera','f'], ['verano','m'], ['otoño','m'], ['invierno','m'], ['nube','f'], ['lluvia','f'], ['viento','m'],
+          ['sol','m'], ['luna','f'], ['estrella','f'], ['montaña','f'], ['río','m'], ['lago','m'], ['playa','f'], ['isla','f'],
+          ['océano','m'], ['bosque','m']
+        ],
+        b1: [
+          ['paisaje','m'], ['frontera','f'], ['ciudadanía','f'], ['gobierno','m'], ['impuesto','m'], ['empresa','f'], ['sueldo','m'],
+          ['entrevista','f'], ['currículum','m'], ['habilidad','f'], ['conocimiento','m'], ['experiencia','f'], ['oportunidad','f'],
+          ['decisión','f'], ['resultado','m'], ['esfuerzo','m'], ['costumbre','f'], ['creencia','f'], ['valor','m'], ['libertad','f'],
+          ['igualdad','f'], ['derecho','m'], ['deber','m'], ['ley','f'], ['justicia','f'], ['crimen','m'], ['víctima','f'],
+          ['testigo','m'], ['juicio','m'], ['prueba','f'], ['enfermedad','f'], ['síntoma','m'], ['tratamiento','m'], ['receta','f'],
+          ['pastilla','f'], ['herida','f'], ['dolor','m'], ['alivio','m'], ['bienestar','m'], ['ambiente','m'], ['contaminación','f'],
+          ['recurso','m'], ['energía','f'], ['desarrollo','m'], ['inversión','f'], ['presupuesto','m'], ['deuda','f'], ['ganancia','f'],
+          ['pérdida','f'], ['acuerdo','m']
+        ],
+        b2: [
+          ['paradigma','m'], ['hipótesis','f'], ['síntesis','f'], ['análisis','m'], ['diagnóstico','m'], ['pronóstico','m'],
+          ['dictamen','m'], ['criterio','m'], ['fundamento','m'], ['premisa','f'], ['argumento','m'], ['contradicción','f'],
+          ['ambigüedad','f'], ['matiz','m'], ['perspectiva','f'], ['enfoque','m'], ['planteamiento','m'], ['discurso','m'],
+          ['retórica','f'], ['narrativa','f'], ['metáfora','f'], ['alegoría','f'], ['ironía','f'], ['paradoja','f'], ['dilema','m'],
+          ['controversia','f'], ['polémica','f'], ['hegemonía','f'], ['soberanía','f'], ['autonomía','f'], ['burocracia','f'],
+          ['jerarquía','f'], ['ideología','f'], ['tendencia','f'], ['corriente','f'], ['movimiento','m'], ['reforma','f'],
+          ['ruptura','f'], ['transición','f'], ['consolidación','f'], ['estancamiento','m'], ['declive','m'], ['auge','m'],
+          ['repercusión','f'], ['trascendencia','f'], ['incertidumbre','f'], ['vulnerabilidad','f'], ['resiliencia','f'],
+          ['sostenibilidad','f'], ['rendimiento','m']
+        ],
+        c1: [
+          ['escisión','f'], ['arbitraje','m'], ['prerrogativa','f'], ['idiosincrasia','f'], ['cosmovisión','f'], ['falacia','f'],
+          ['sofisma','m'], ['axioma','m'], ['postulado','m'], ['corolario','m'], ['disquisición','f'], ['exégesis','f'],
+          ['hermenéutica','f'], ['epistemología','f'], ['ontología','f'], ['fenomenología','f'], ['teleología','f'], ['semiótica','f'],
+          ['pragmática','f'], ['morfología','f'], ['sintaxis','f'], ['fonología','f'], ['lexicografía','f'], ['etimología','f'],
+          ['diacronía','f'], ['sincronía','f'], ['diglosia','f'], ['paráfrasis','f'], ['circunloquio','m'], ['eufemismo','m'],
+          ['neologismo','m'], ['arcaísmo','m'], ['barbarismo','m'], ['anacoluto','m'], ['pleonasmo','m'], ['sinonimia','f'],
+          ['polisemia','f'], ['homofonía','f'], ['ambivalencia','f'], ['contraposición','f'], ['yuxtaposición','f'],
+          ['subordinación','f'], ['concatenación','f'], ['elipsis','f'], ['deixis','f'], ['anáfora','f'], ['catáfora','f'],
+          ['cohesión','f'], ['coherencia','f'], ['intertextualidad','f']
+        ]
+      };
+
+      const DIFFICULTIES = {
+        principiante: {
+          label: 'Principiante',
+          pools: ['a1', 'a2'],
+          spawnBase: 1.2,
+          spawnMin: 0.55,
+          speedBase: 42,
+          speedRamp: 1.8,
+          wordCapBase: 6
+        },
+        intermedio: {
+          label: 'Intermedio',
+          pools: ['a1', 'a2', 'b1'],
+          spawnBase: 1.0,
+          spawnMin: 0.48,
+          speedBase: 54,
+          speedRamp: 2.15,
+          wordCapBase: 7
+        },
+        avanzado: {
+          label: 'Avanzado',
+          pools: ['a1', 'a2', 'b1', 'b2'],
+          spawnBase: 0.88,
+          spawnMin: 0.42,
+          speedBase: 62,
+          speedRamp: 2.45,
+          wordCapBase: 8
+        },
+        experto: {
+          label: 'Experto',
+          pools: ['a1', 'a2', 'b1', 'b2', 'c1'],
+          spawnBase: 0.78,
+          spawnMin: 0.36,
+          speedBase: 70,
+          speedRamp: 2.8,
+          wordCapBase: 9
+        }
+      };
+
+      const state = {
+        mode: 'menu',
+        difficultyKey: 'principiante',
+        score: 0,
+        combo: 0,
+        bestCombo: 0,
+        lives: 3,
+        currentTarget: 'm',
+        targetTimer: 0,
+        roundTime: 0,
+        spawnTimer: 0,
+        totalTime: 0,
+        lastTime: 0,
+        words: [],
+        projectiles: [],
+        particles: [],
+        clouds: [],
+        stars: [],
+        mistakes: [],
+        seenMistakes: new Set(),
+        player: {
+          x: 0,
+          y: 0,
+          width: 58,
+          height: 30,
+          speed: 420,
+          cooldown: 0
+        },
+        input: {
+          left: false,
+          right: false,
+          pointerX: null,
+          pointerActive: false
+        },
+        fx: {
+          redFlash: 0,
+          shake: 0,
+          skyBlend: 0
+        }
+      };
+
+      let dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      let width = 0;
+      let height = 0;
+      let groundY = 0;
+      let audioCtx = null;
+
+      function initAudio() {
+        if (audioCtx) return;
+        try {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          audioCtx = AudioContextClass ? new AudioContextClass() : null;
+        } catch (_) {
+          audioCtx = null;
+        }
+      }
+
+      function beep({ type='square', freq=440, duration=0.08, gain=0.04, slide=0, attack=0.002 }) {
+        if (!audioCtx) return;
+        const t0 = audioCtx.currentTime;
+        const osc = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, t0);
+        if (slide !== 0) osc.frequency.linearRampToValueAtTime(Math.max(60, freq + slide), t0 + duration);
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.linearRampToValueAtTime(gain, t0 + attack);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + duration);
+        osc.connect(g).connect(audioCtx.destination);
+        osc.start(t0);
+        osc.stop(t0 + duration + 0.02);
+      }
+
+      function noiseBurst(duration = 0.08, gain = 0.03) {
+        if (!audioCtx) return;
+        const bufferSize = Math.floor(audioCtx.sampleRate * duration);
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+          data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+        }
+        const source = audioCtx.createBufferSource();
+        const g = audioCtx.createGain();
+        source.buffer = buffer;
+        g.gain.value = gain;
+        source.connect(g).connect(audioCtx.destination);
+        source.start();
+      }
+
+      function playShoot() {
+        initAudio();
+        beep({ type: 'square', freq: 700, duration: 0.05, gain: 0.03, slide: -220 });
+      }
+
+      function playGood() {
+        initAudio();
+        beep({ type: 'triangle', freq: 520, duration: 0.07, gain: 0.04, slide: 180 });
+        beep({ type: 'triangle', freq: 700, duration: 0.09, gain: 0.025, slide: 120 });
+      }
+
+      function playBad() {
+        initAudio();
+        noiseBurst(0.08, 0.02);
+        beep({ type: 'sawtooth', freq: 260, duration: 0.12, gain: 0.03, slide: -120 });
+      }
+
+      function playLoseLife() {
+        initAudio();
+        beep({ type: 'sawtooth', freq: 220, duration: 0.16, gain: 0.04, slide: -140 });
+        beep({ type: 'square', freq: 140, duration: 0.18, gain: 0.03, slide: -40 });
+      }
+
+      function rand(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+
+      function pick(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+      }
+
+      function resize() {
+        dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+        width = window.innerWidth;
+        height = window.innerHeight;
+        canvas.width = Math.floor(width * dpr);
+        canvas.height = Math.floor(height * dpr);
+        canvas.style.width = width + 'px';
+        canvas.style.height = height + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        groundY = height - Math.max(70, height * 0.1);
+        state.player.y = groundY - 26;
+        if (!state.player.x) state.player.x = width * 0.5;
+        generateSkyDecor();
+      }
+
+      function generateSkyDecor() {
+        state.clouds = [];
+        state.stars = [];
+        const cloudCount = Math.max(5, Math.floor(width / 220));
+        for (let i = 0; i < cloudCount; i++) {
+          state.clouds.push({
+            x: Math.random() * width,
+            y: Math.random() * (groundY * 0.45),
+            w: rand(80, 190),
+            h: rand(28, 58),
+            speed: rand(6, 18),
+            alpha: rand(0.18, 0.34)
+          });
+        }
+        const starCount = Math.max(25, Math.floor(width / 25));
+        for (let i = 0; i < starCount; i++) {
+          state.stars.push({
+            x: Math.random() * width,
+            y: Math.random() * groundY * 0.68,
+            r: rand(0.7, 2.2),
+            alpha: rand(0.18, 0.6)
+          });
+        }
+      }
+
+      function buildWordPool(difficultyKey) {
+        const keys = DIFFICULTIES[difficultyKey].pools;
+        return keys.flatMap(k => WORD_POOLS[k].map(([word, gender]) => ({ word, gender })));
+      }
+
+      function resetGame(difficultyKey) {
+        const config = DIFFICULTIES[difficultyKey];
+        state.mode = 'playing';
+        state.input.pointerActive = false;
+        state.input.pointerX = null;
+        state.input.left = false;
+        state.input.right = false;
+        state.difficultyKey = difficultyKey;
+        state.score = 0;
+        state.combo = 0;
+        state.bestCombo = 0;
+        state.lives = 3;
+        state.currentTarget = Math.random() < 0.5 ? 'm' : 'f';
+        state.targetTimer = rand(6.5, 9.5);
+        state.roundTime = 0;
+        state.spawnTimer = 0.4;
+        state.totalTime = 0;
+        state.words = [];
+        state.projectiles = [];
+        state.particles = [];
+        state.mistakes = [];
+        state.seenMistakes = new Set();
+        state.fx.redFlash = 0;
+        state.fx.shake = 0;
+        state.fx.skyBlend = 0;
+        state.player.x = width * 0.5;
+        state.player.cooldown = 0;
+        state.wordPool = buildWordPool(difficultyKey);
+        hud.hidden = false;
+        controlsHint.hidden = false;
+        startScreen.hidden = true;
+        gameOverScreen.hidden = true;
+        updateHud();
+      }
+
+      function endGame() {
+        state.mode = 'gameover';
+        hud.hidden = true;
+        controlsHint.hidden = true;
+        finalScoreEl.textContent = String(state.score);
+        bestComboEl.textContent = 'x' + Math.max(1, state.bestCombo);
+        finalDifficultyEl.textContent = DIFFICULTIES[state.difficultyKey].label;
+        renderMistakes();
+        gameOverScreen.hidden = false;
+      }
+
+      function renderMistakes() {
+        const mistakes = state.mistakes.slice();
+        const usedAgua = mistakes.some(m => m.word === 'agua');
+        aguaNote.hidden = !usedAgua;
+        if (mistakes.length === 0) {
+          mistakeContent.innerHTML = '<p class="empty-review">¡Excelente! No registraste errores en esta partida.</p>';
+          return;
+        }
+        const ul = document.createElement('ul');
+        ul.className = 'mistake-list';
+        for (const item of mistakes) {
+          const li = document.createElement('li');
+          li.textContent = `${item.word} (${item.gender})`;
+          ul.appendChild(li);
+        }
+        mistakeContent.innerHTML = '';
+        mistakeContent.appendChild(ul);
+      }
+
+      function registerMistake(wordObj) {
+        const key = wordObj.word;
+        if (state.seenMistakes.has(key)) return;
+        state.seenMistakes.add(key);
+        state.mistakes.push({
+          word: wordObj.word,
+          gender: wordObj.gender === 'm' ? 'm' : 'f'
+        });
+      }
+
+      function updateHud() {
+        scorePill.textContent = `Puntuación: ${state.score}`;
+        comboPill.textContent = `Combo: x${Math.max(1, state.combo)}`;
+        livesPill.textContent = `Vidas: ${state.lives}`;
+        const isMasc = state.currentTarget === 'm';
+        targetPill.textContent = `Objetivo: ${isMasc ? 'Masculino' : 'Femenino'}`;
+        targetPill.style.background = isMasc
+          ? 'rgba(30, 64, 175, 0.66)'
+          : 'rgba(190, 24, 93, 0.66)';
+      }
+
+      function spawnWord() {
+        const config = DIFFICULTIES[state.difficultyKey];
+        const occupied = state.words.length;
+        const cap = config.wordCapBase + Math.floor(state.totalTime / 22);
+        if (occupied >= cap) return;
+
+        const pool = state.wordPool;
+        let choice = pick(pool);
+        let attempts = 0;
+        while (attempts < 8 && state.words.some(w => Math.abs(w.x - 0) < 0 && w.word === choice.word)) {
+          choice = pick(pool);
+          attempts++;
+        }
+
+        const speed = config.speedBase + state.totalTime * config.speedRamp + rand(-8, 14);
+        const padding = 70;
+        const x = rand(padding, Math.max(padding + 1, width - padding));
+        const y = -20;
+        const fontSize = Math.max(18, Math.min(30, 18 + choice.word.length * 0.14 + width * 0.004));
+        const wordObj = {
+          ...choice,
+          x,
+          y,
+          vy: speed,
+          fontSize,
+          phase: rand(0, TWO_PI),
+          drift: rand(-16, 16),
+          radius: Math.max(38, choice.word.length * 10 + 14)
+        };
+        state.words.push(wordObj);
+      }
+
+      function fireProjectile(targetX = null) {
+        if (state.mode !== 'playing') return;
+        if (state.player.cooldown > 0) return;
+        const fromX = state.player.x;
+        const destX = targetX == null ? fromX : targetX;
+        const dx = destX - fromX;
+        const maxSpread = Math.max(120, width * 0.16);
+        const clampedDx = Math.max(-maxSpread, Math.min(maxSpread, dx));
+        state.projectiles.push({
+          x: fromX,
+          y: state.player.y - 8,
+          vx: clampedDx * 2.6,
+          vy: -700,
+          r: 5
+        });
+        state.player.cooldown = 0.22;
+        playShoot();
+      }
+
+      function makePop(x, y, good = true) {
+        const count = good ? 14 : 10;
+        for (let i = 0; i < count; i++) {
+          const angle = rand(0, TWO_PI);
+          const speed = rand(40, good ? 170 : 110);
+          state.particles.push({
+            x,
+            y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: rand(0.35, 0.7),
+            maxLife: 1,
+            size: rand(2, 5),
+            color: good ? (Math.random() < 0.5 ? '#fef08a' : '#ffffff') : '#f87171'
+          });
+        }
+      }
+
+      function loseLife(wordObj = null) {
+        if (wordObj) registerMistake(wordObj);
+        state.lives -= 1;
+        state.combo = 0;
+        state.fx.redFlash = 0.42;
+        state.fx.shake = 0.32;
+        playLoseLife();
+        updateHud();
+        if (state.lives <= 0) {
+          endGame();
+        }
+      }
+
+      function toggleTargetGender() {
+        state.currentTarget = state.currentTarget === 'm' ? 'f' : 'm';
+        updateHud();
+      }
+
+      function updatePlaying(dt) {
+        const config = DIFFICULTIES[state.difficultyKey];
+        state.totalTime += dt;
+        state.roundTime += dt;
+        state.targetTimer -= dt;
+        state.spawnTimer -= dt;
+        state.player.cooldown = Math.max(0, state.player.cooldown - dt);
+        state.fx.redFlash = Math.max(0, state.fx.redFlash - dt * 1.6);
+        state.fx.shake = Math.max(0, state.fx.shake - dt * 2.6);
+        state.fx.skyBlend = Math.min(1, state.fx.skyBlend + dt * 1.2);
+
+        if (state.targetTimer <= 0) {
+          toggleTargetGender();
+          state.targetTimer = rand(6.5, 9.5);
+          state.fx.skyBlend = 0;
+        }
+
+        const spawnInterval = Math.max(config.spawnMin, config.spawnBase - state.totalTime * 0.008);
+        if (state.spawnTimer <= 0) {
+          spawnWord();
+          if (Math.random() < Math.min(0.42, state.totalTime / 100)) spawnWord();
+          state.spawnTimer = spawnInterval;
+        }
+
+        const moveLeft = state.input.left ? -1 : 0;
+        const moveRight = state.input.right ? 1 : 0;
+        const axis = moveLeft + moveRight;
+
+        if (state.input.pointerActive && state.input.pointerX != null) {
+          const dx = state.input.pointerX - state.player.x;
+          const step = Math.sign(dx) * Math.min(Math.abs(dx), state.player.speed * dt * 1.1);
+          state.player.x += step;
+        } else if (axis !== 0) {
+          state.player.x += axis * state.player.speed * dt;
+        }
+        state.player.x = Math.max(36, Math.min(width - 36, state.player.x));
+
+        for (const cloud of state.clouds) {
+          cloud.x += cloud.speed * dt;
+          if (cloud.x - cloud.w > width + 40) {
+            cloud.x = -cloud.w - 40;
+            cloud.y = Math.random() * (groundY * 0.45);
+          }
+        }
+
+        for (const word of state.words) {
+          word.y += word.vy * dt;
+          word.x += Math.sin(state.totalTime + word.phase) * word.drift * dt;
+        }
+
+        for (const shot of state.projectiles) {
+          shot.x += shot.vx * dt;
+          shot.y += shot.vy * dt;
+        }
+
+        for (const p of state.particles) {
+          p.x += p.vx * dt;
+          p.y += p.vy * dt;
+          p.vx *= 0.985;
+          p.vy *= 0.985;
+          p.vy += 38 * dt;
+          p.life -= dt;
+        }
+
+        handleCollisions();
+
+        state.projectiles = state.projectiles.filter(s => s.y > -30 && s.x > -40 && s.x < width + 40);
+        state.particles = state.particles.filter(p => p.life > 0);
+
+        const remaining = [];
+        for (const word of state.words) {
+          if (word.y >= groundY - 8) {
+            if (word.gender === state.currentTarget) {
+              loseLife(word);
+              if (state.mode !== 'playing') return;
+            }
+            continue;
+          }
+          remaining.push(word);
+        }
+        state.words = remaining;
+
+        updateHud();
+      }
+
+      function handleCollisions() {
+        const wordsToRemove = new Set();
+        const shotsToRemove = new Set();
+
+        for (let i = 0; i < state.projectiles.length; i++) {
+          const shot = state.projectiles[i];
+          for (let j = 0; j < state.words.length; j++) {
+            if (wordsToRemove.has(j)) continue;
+            const word = state.words[j];
+            const dx = shot.x - word.x;
+            const dy = shot.y - word.y;
+            const hitRadius = Math.max(word.radius * 0.55, 24);
+            if (dx * dx + dy * dy <= hitRadius * hitRadius) {
+              shotsToRemove.add(i);
+              wordsToRemove.add(j);
+              const correct = word.gender === state.currentTarget;
+              if (correct) {
+                state.combo += 1;
+                state.bestCombo = Math.max(state.bestCombo, state.combo);
+                state.score += 10 * Math.max(1, state.combo);
+                playGood();
+                makePop(word.x, word.y, true);
+              } else {
+                registerMistake(word);
+                state.fx.redFlash = 0.35;
+                state.fx.shake = 0.26;
+                state.combo = 0;
+                playBad();
+                makePop(word.x, word.y, false);
+                loseLife();
+                if (state.mode !== 'playing') return;
+              }
+              break;
+            }
+          }
+        }
+
+        state.projectiles = state.projectiles.filter((_, idx) => !shotsToRemove.has(idx));
+        state.words = state.words.filter((_, idx) => !wordsToRemove.has(idx));
+      }
+
+      function drawRoundedRect(x, y, w, h, r, fillStyle, strokeStyle = null) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+        ctx.fillStyle = fillStyle;
+        ctx.fill();
+        if (strokeStyle) {
+          ctx.strokeStyle = strokeStyle;
+          ctx.stroke();
+        }
+      }
+
+      function drawBackground() {
+        const isMasc = state.currentTarget === 'm';
+        const topA = isMasc ? COLORS.mascSkyTop : COLORS.femSkyTop;
+        const botA = isMasc ? COLORS.mascSkyBottom : COLORS.femSkyBottom;
+        const gradient = ctx.createLinearGradient(0, 0, 0, height);
+        gradient.addColorStop(0, topA);
+        gradient.addColorStop(1, botA);
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
+
+        ctx.save();
+        for (const star of state.stars) {
+          ctx.globalAlpha = isMasc ? star.alpha * 0.4 : star.alpha * 0.55;
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(star.x, star.y, star.r, 0, TWO_PI);
+          ctx.fill();
+        }
+        ctx.restore();
+
+        for (const cloud of state.clouds) {
+          ctx.save();
+          ctx.globalAlpha = cloud.alpha;
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.ellipse(cloud.x, cloud.y, cloud.w * 0.28, cloud.h * 0.55, 0, 0, TWO_PI);
+          ctx.ellipse(cloud.x - cloud.w * 0.18, cloud.y + 3, cloud.w * 0.22, cloud.h * 0.45, 0, 0, TWO_PI);
+          ctx.ellipse(cloud.x + cloud.w * 0.19, cloud.y + 2, cloud.w * 0.24, cloud.h * 0.48, 0, 0, TWO_PI);
+          ctx.fill();
+          ctx.restore();
+        }
+
+        ctx.fillStyle = '#22c55e';
+        ctx.fillRect(0, groundY, width, height - groundY);
+
+        ctx.fillStyle = 'rgba(255,255,255,0.18)';
+        for (let i = 0; i < width; i += 26) {
+          ctx.beginPath();
+          ctx.moveTo(i, groundY + 16);
+          ctx.lineTo(i + 8, groundY - rand(4, 12));
+          ctx.lineTo(i + 14, groundY + 16);
+          ctx.fill();
+        }
+      }
+
+      function drawPlayer() {
+        const shakeX = state.fx.shake > 0 ? rand(-10, 10) * state.fx.shake : 0;
+        const x = state.player.x + shakeX;
+        const y = state.player.y;
+        ctx.save();
+        ctx.translate(x, y);
+
+        ctx.fillStyle = '#334155';
+        drawRoundedRect(-30, 6, 60, 18, 8, '#334155');
+        ctx.fillStyle = COLORS.ship;
+        ctx.beginPath();
+        ctx.moveTo(0, -18);
+        ctx.lineTo(22, 10);
+        ctx.lineTo(-22, 10);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = '#fef3c7';
+        ctx.beginPath();
+        ctx.arc(0, -4, 7, 0, TWO_PI);
+        ctx.fill();
+
+        ctx.fillStyle = '#fde68a';
+        ctx.fillRect(-4, -26, 8, 10);
+
+        ctx.restore();
+      }
+
+      function drawWords() {
+        for (const word of state.words) {
+          const padX = 12;
+          ctx.font = `700 ${word.fontSize}px Inter, system-ui, sans-serif`;
+          const textWidth = ctx.measureText(word.word).width;
+          const boxW = textWidth + padX * 2;
+          const boxH = word.fontSize + 14;
+          const boxX = word.x - boxW / 2;
+          const boxY = word.y - boxH / 2;
+
+          const boxColor = 'rgba(34, 197, 94, 0.9)';
+          drawRoundedRect(boxX, boxY, boxW, boxH, 12, boxColor, 'rgba(255,255,255,0.22)');
+          ctx.fillStyle = COLORS.textLight;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(word.word, word.x, word.y + 1);
+        }
+      }
+
+      function drawProjectiles() {
+        ctx.fillStyle = COLORS.projectile;
+        for (const shot of state.projectiles) {
+          ctx.beginPath();
+          ctx.arc(shot.x, shot.y, shot.r, 0, TWO_PI);
+          ctx.fill();
+          ctx.fillRect(shot.x - 1.1, shot.y, 2.2, 12);
+        }
+      }
+
+      function drawParticles() {
+        for (const p of state.particles) {
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, p.life / p.maxLife);
+          ctx.fillStyle = p.color;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.size, 0, TWO_PI);
+          ctx.fill();
+          ctx.restore();
+        }
+      }
+
+      function drawTargetBanner() {
+        if (state.mode !== 'playing') return;
+        const isMasc = state.currentTarget === 'm';
+        const label = isMasc ? 'AZUL = MASCULINO' : 'ROSA = FEMENINO';
+        const color = isMasc ? 'rgba(30,64,175,0.8)' : 'rgba(190,24,93,0.8)';
+        ctx.save();
+        ctx.font = '700 16px Inter, system-ui, sans-serif';
+        const tw = ctx.measureText(label).width;
+        const x = width / 2 - tw / 2 - 16;
+        const y = 64;
+        drawRoundedRect(x, y, tw + 32, 34, 14, color, 'rgba(255,255,255,0.18)');
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, width / 2, y + 17);
+        ctx.restore();
+      }
+
+      function drawDamageFlash() {
+        if (state.fx.redFlash <= 0) return;
+        ctx.save();
+        ctx.globalAlpha = state.fx.redFlash * 0.4;
+        ctx.fillStyle = '#ef4444';
+        ctx.fillRect(0, 0, width, height);
+        ctx.restore();
+      }
+
+      function drawMenuBackground() {
+        drawBackground();
+        ctx.save();
+        ctx.globalAlpha = 0.14;
+        for (let i = 0; i < 16; i++) {
+          ctx.fillStyle = i % 2 === 0 ? '#ffffff' : '#fef3c7';
+          ctx.beginPath();
+          ctx.arc(rand(0, width), rand(0, groundY * 0.9), rand(2, 5), 0, TWO_PI);
+          ctx.fill();
+        }
+        ctx.restore();
+      }
+
+      function loop(ts) {
+        const dt = Math.min(0.033, (ts - state.lastTime) / 1000 || 0.016);
+        state.lastTime = ts;
+
+        if (state.mode === 'playing') {
+          updatePlaying(dt);
+        }
+
+        ctx.save();
+        if (state.fx.shake > 0 && state.mode === 'playing') {
+          ctx.translate(rand(-8, 8) * state.fx.shake, rand(-5, 5) * state.fx.shake);
+        }
+        if (state.mode === 'menu' || state.mode === 'gameover') {
+          drawMenuBackground();
+        } else {
+          drawBackground();
+          drawWords();
+          drawProjectiles();
+          drawParticles();
+          drawPlayer();
+          drawTargetBanner();
+          drawDamageFlash();
+        }
+        ctx.restore();
+        requestAnimationFrame(loop);
+      }
+
+      function onPointerDown(ev) {
+        initAudio();
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume().catch(() => {});
+        }
+        const rect = canvas.getBoundingClientRect();
+        const x = ev.clientX - rect.left;
+        state.input.pointerX = x;
+        state.input.pointerActive = true;
+        if (state.mode === 'playing') {
+          fireProjectile(x);
+        }
+      }
+
+      function onPointerMove(ev) {
+        const rect = canvas.getBoundingClientRect();
+        state.input.pointerX = ev.clientX - rect.left;
+      }
+
+      function onPointerUp() {
+        state.input.pointerActive = false;
+      }
+
+      function onTouchStart(ev) {
+        if (ev.touches.length === 0) return;
+        ev.preventDefault();
+        const touch = ev.touches[0];
+        onPointerDown({ clientX: touch.clientX, clientY: touch.clientY });
+      }
+
+      function onTouchMove(ev) {
+        if (ev.touches.length === 0) return;
+        ev.preventDefault();
+        const touch = ev.touches[0];
+        onPointerMove({ clientX: touch.clientX, clientY: touch.clientY });
+      }
+
+      function onTouchEnd(ev) {
+        ev.preventDefault();
+        onPointerUp();
+      }
+
+      function onKeyDown(ev) {
+        initAudio();
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume().catch(() => {});
+        }
+        const key = ev.key.toLowerCase();
+        if (key === 'arrowleft' || key === 'a') {
+          state.input.left = true;
+          ev.preventDefault();
+        }
+        if (key === 'arrowright' || key === 'd') {
+          state.input.right = true;
+          ev.preventDefault();
+        }
+        if (key === ' ' || key === 'spacebar' || key === 'arrowup') {
+          if (state.mode === 'playing') fireProjectile();
+          ev.preventDefault();
+        }
+      }
+
+      function onKeyUp(ev) {
+        const key = ev.key.toLowerCase();
+        if (key === 'arrowleft' || key === 'a') state.input.left = false;
+        if (key === 'arrowright' || key === 'd') state.input.right = false;
+      }
+
+      document.querySelectorAll('[data-difficulty]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          initAudio();
+          if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume().catch(() => {});
+          }
+          resetGame(btn.dataset.difficulty);
+        });
+      });
+
+      playAgainBtn.addEventListener('click', () => resetGame(state.difficultyKey));
+      backToMenuBtn.addEventListener('click', () => {
+        state.mode = 'menu';
+        state.input.pointerActive = false;
+        state.input.pointerX = null;
+        state.input.left = false;
+        state.input.right = false;
+        gameOverScreen.hidden = true;
+        startScreen.hidden = false;
+        hud.hidden = true;
+        controlsHint.hidden = true;
+      });
+
+      window.addEventListener('resize', resize);
+      canvas.addEventListener('mousedown', onPointerDown);
+      canvas.addEventListener('mousemove', onPointerMove);
+      window.addEventListener('mouseup', onPointerUp);
+      canvas.addEventListener('touchstart', onTouchStart, { passive: false });
+      canvas.addEventListener('touchmove', onTouchMove, { passive: false });
+      canvas.addEventListener('touchend', onTouchEnd, { passive: false });
+      window.addEventListener('keydown', onKeyDown, { passive: false });
+      window.addEventListener('keyup', onKeyUp);
+
+      resize();
+      state.mode = 'menu';
+      requestAnimationFrame(loop);
+    })();
+  </script>
+</body>
+</html>
