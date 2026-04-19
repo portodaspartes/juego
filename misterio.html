@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Misterio en San Martin</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{min-height:100vh;background:linear-gradient(160deg,#1a1410 0%,#2d1f14 40%,#1a1a2e 100%);font-family:Georgia,serif;color:#e8dcc8;display:flex;flex-direction:column;align-items:center}
+#header{width:100%;max-width:640px;padding:24px 20px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(232,220,200,0.1)}
+.title-area{display:flex;align-items:center;gap:12px}
+.title-area .icon{font-size:28px}
+#header h1{font-size:18px;font-weight:800;color:#f0e6d3;margin:0}
+.subtitle{font-size:11px;color:#a89880;letter-spacing:0.1em;text-transform:uppercase;font-family:system-ui,sans-serif;margin:0}
+#vocabBtn{background:rgba(232,220,200,0.08);border:1px solid rgba(232,220,200,0.15);color:#a89880;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:system-ui,sans-serif}
+#vocabBtn.on{background:rgba(212,160,80,0.2);color:#d4a050}
+#progressArea{width:100%;max-width:640px;padding:8px 20px}
+#progressLabel{font-size:10px;color:#8a7a68;font-family:system-ui,sans-serif}
+#progressTrack{height:3px;background:rgba(232,220,200,0.08);border-radius:2px;overflow:hidden;margin-top:4px}
+#progressBar{height:100%;width:0%;background:linear-gradient(90deg,#d4a050,#e8c080);border-radius:2px;transition:width 0.5s ease}
+#vocabPanel{width:100%;max-width:640px;padding:0 20px;margin-bottom:8px;display:none}
+#vocabPanel.open{display:block}
+#vocabInner{background:rgba(212,160,80,0.08);border:1px solid rgba(212,160,80,0.2);border-radius:12px;padding:16px;max-height:200px;overflow-y:auto}
+#vocabInner h3{font-size:12px;font-weight:700;color:#d4a050;font-family:system-ui,sans-serif;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px}
+.vgrid{display:grid;grid-template-columns:1fr 1fr;gap:4px 16px}
+.vi{font-size:13px;line-height:1.6}
+.vi .es{color:#e8dcc8;font-style:italic}
+.vi .en{color:#8a7a68}
+#content{flex:1;width:100%;max-width:640px;padding:16px 20px 32px;transition:opacity 0.25s ease,transform 0.25s ease;opacity:1;transform:translateY(0)}
+#content.hide{opacity:0;transform:translateY(12px)}
+#emoji{font-size:48px;text-align:center;margin-bottom:12px}
+#title{font-size:22px;font-weight:800;text-align:center;margin:0 0 20px 0;color:#f0e6d3;line-height:1.3}
+#divider{text-align:center;margin:0 0 20px 0;color:#5a4a38;font-size:14px;letter-spacing:0.3em}
+#story{font-size:16px;line-height:1.85;color:#d8ccb8}
+#story p{margin:0 0 16px 0}
+#story p.i{text-indent:1.5em}
+#story p.d{color:#d4a050}
+#choices{margin-top:28px;display:flex;flex-direction:column;gap:12px}
+.cb{background:rgba(232,220,200,0.04);border:1px solid rgba(232,220,200,0.12);border-radius:12px;padding:14px 18px;color:#e8dcc8;font-size:15px;font-family:Georgia,serif;cursor:pointer;text-align:left;line-height:1.5;transition:all 0.2s ease;display:block;width:100%}
+.cb:hover{background:rgba(212,160,80,0.12);border-color:rgba(212,160,80,0.3);color:#f0e6d3}
+.cb .lt{color:#d4a050;font-weight:700;margin-right:8px;font-family:system-ui,sans-serif;font-size:13px}
+#backBtn{margin-top:24px;background:none;border:none;color:#6a5a48;font-size:13px;cursor:pointer;font-family:system-ui,sans-serif;padding:8px 0;display:none}
+#backBtn:hover{color:#a89880}
+#backBtn.show{display:block}
+#footer{width:100%;max-width:640px;padding:12px 20px 20px;text-align:center;border-top:1px solid rgba(232,220,200,0.06)}
+#footer p{margin:0;font-size:10px;color:#5a4a38;font-family:system-ui,sans-serif;letter-spacing:0.06em}
+</style>
+</head>
+<body>
+<div id="header">
+<div class="title-area">
+<span class="icon">&#128214;</span>
+<div>
+<h1>Misterio en San Mart&#237;n</h1>
+<p class="subtitle">Aventura interactiva &#183; Nivel A2</p>
+</div>
+</div>
+<button id="vocabBtn">&#128218; Vocab</button>
+</div>
+<div id="progressArea">
+<span id="progressLabel"></span>
+<div id="progressTrack"><div id="progressBar"></div></div>
+</div>
+<div id="vocabPanel"><div id="vocabInner"><h3>Vocabulario &#250;til</h3><div class="vgrid" id="vocabGrid"></div></div></div>
+<div id="content">
+<div id="emoji"></div>
+<h2 id="title"></h2>
+<div id="divider">&#9472;&#9472;&#9472;&#9472;&#9472; &#10022; &#9472;&#9472;&#9472;&#9472;&#9472;</div>
+<div id="story"></div>
+<div id="choices"></div>
+<button id="backBtn">&#8592; Volver atr&#225;s</button>
+</div>
+<div id="footer">
+<p>3 finales posibles &#183; Espa&#241;ol A2 &#183; Toca &#171;Vocab&#187; para ayuda</p>
+</div>
+<script>
+(function(){
+var SC={
+start:{t:"Cap\u00edtulo 1: La llegada",p:["Es un s\u00e1bado por la ma\u00f1ana. Llegas al peque\u00f1o pueblo de San Mart\u00edn para visitar a tu abuela. Pero algo es diferente hoy. La plaza est\u00e1 vac\u00eda. Las tiendas est\u00e1n cerradas. No hay nadie en las calles.","Caminas hasta la casa de tu abuela. La puerta est\u00e1 abierta, pero ella no est\u00e1 dentro. En la mesa de la cocina hay una nota:","\u00abNo busques. Todo est\u00e1 bien. \u2014 Abuela\u00bb","Pero la letra no parece la letra de tu abuela..."],c:[{t:"Ir a la panader\u00eda a preguntar por tu abuela",n:"panaderia"},{t:"Buscar pistas dentro de la casa",n:"casa_pistas"}],e:"\uD83C\uDFD8\uFE0F"},
+panaderia:{t:"Cap\u00edtulo 2: La panader\u00eda",p:["Caminas a la panader\u00eda de don Roberto. La puerta est\u00e1 cerrada, pero ves una luz dentro. Tocas la puerta.","Don Roberto abre un poco la puerta. Parece nervioso.","\u2014No puedo hablar ahora \u2014dice en voz baja\u2014. Tu abuela... ella fue al mercado viejo esta ma\u00f1ana. Pero nadie va all\u00ed. Est\u00e1 abandonado desde hace a\u00f1os.","Don Roberto cierra la puerta r\u00e1pidamente."],c:[{t:"Ir al mercado viejo",n:"mercado"},{t:"Buscar a m\u00e1s vecinos para preguntar",n:"vecinos"}],e:"\uD83C\uDF5E"},
+casa_pistas:{t:"Cap\u00edtulo 2: Pistas en la casa",p:["Miras la casa con atenci\u00f3n. En el suelo de la cocina hay manchas de barro. Las manchas van desde la puerta hasta la ventana de atr\u00e1s.","En la basura encuentras un papel arrugado. Es un mapa dibujado a mano. Muestra un camino desde la plaza hasta un edificio marcado con una X. El edificio parece el mercado viejo del pueblo.","Debajo del mapa hay unas palabras: \u00abReuni\u00f3n \u2014 9:00 \u2014 silencio total\u00bb"],c:[{t:"Seguir el mapa hasta el mercado viejo",n:"mercado"},{t:"Ir a la plaza a investigar",n:"plaza"}],e:"\uD83D\uDD0D"},
+vecinos:{t:"Cap\u00edtulo 3: Los vecinos",p:["Tocas varias puertas, pero nadie responde. Finalmente, una mujer mayor abre su ventana. Es do\u00f1a Carmen.","\u2014\u00a1Chist! \u2014dice\u2014. No hagas ruido. Esta ma\u00f1ana vi a muchas personas caminando hacia el mercado viejo. Tu abuela iba con ellas. Llevaban cajas grandes.","\u2014\u00bfCajas? \u00bfQu\u00e9 tipo de cajas? \u2014preguntas.","\u2014No s\u00e9, pero parec\u00edan pesadas. Ten cuidado. Algo raro pasa en este pueblo hoy."],c:[{t:"Ir directamente al mercado viejo",n:"mercado"},{t:"Volver a la casa de tu abuela por el mapa",n:"casa_pistas"}],e:"\uD83D\uDC75"},
+plaza:{t:"Cap\u00edtulo 3: La plaza vac\u00eda",p:["La plaza est\u00e1 completamente vac\u00eda. No hay coches. No hay perros. Es muy raro para un s\u00e1bado.","En el suelo, cerca de la fuente, ves algo brillante. Es una llave peque\u00f1a y dorada. Tiene las letras \u00abM.V.\u00bb grabadas.","Piensas: \u00abM.V.\u00bb... \u00bfMercado Viejo?","De repente, escuchas un ruido detr\u00e1s de los \u00e1rboles. Alguien te est\u00e1 observando."],c:[{t:"Tomar la llave e ir al mercado viejo",n:"mercado_llave"},{t:"Esconderte y observar qui\u00e9n te mira",n:"espia"}],e:"\u26F2"},
+espia:{t:"Cap\u00edtulo 4: El esp\u00eda",p:["Te escondes detr\u00e1s de la fuente y esperas. Despu\u00e9s de un minuto, un chico joven sale de detr\u00e1s de los \u00e1rboles. Lo reconoces: es Marcos, el nieto de don Roberto.","\u2014\u00a1Eh! \u00bfQu\u00e9 haces aqu\u00ed? \u2014le preguntas.","Marcos parece asustado.","\u2014No deber\u00edas estar aqu\u00ed \u2014dice\u2014. Todos est\u00e1n en el mercado viejo. Es un secreto. Pero... creo que necesitan ayuda. Algo sali\u00f3 mal con el plan.","\u2014\u00bfQu\u00e9 plan? \u2014preguntas.","\u2014Ven conmigo. Te lo explico en el camino."],c:[{t:"Ir con Marcos al mercado viejo",n:"mercado_marcos"},{t:"No confiar en Marcos e ir solo/a",n:"mercado"}],e:"\uD83D\uDD75\uFE0F"},
+mercado:{t:"Cap\u00edtulo 4: El mercado viejo",p:["Llegas al mercado viejo. Es un edificio grande y gris. Las ventanas est\u00e1n cubiertas con papel. La puerta principal est\u00e1 cerrada con candado.","Caminas alrededor del edificio. En la parte de atr\u00e1s hay una puerta peque\u00f1a. Est\u00e1 abierta.","Desde dentro escuchas voces. Muchas voces. No puedes entender qu\u00e9 dicen, pero no suenan asustadas. Suenan... \u00bfemocionadas?"],c:[{t:"Entrar por la puerta de atr\u00e1s en silencio",n:"entrar_silencio"},{t:"Gritar: \u00a1Abuela! \u00bfEst\u00e1s ah\u00ed?",n:"entrar_gritando"}],e:"\uD83C\uDFDA\uFE0F"},
+mercado_llave:{t:"Cap\u00edtulo 4: La puerta dorada",p:["Llegas al mercado viejo con la llave dorada. La puerta principal tiene un candado grande y dorado. Pones la llave en el candado. \u00a1Funciona!","Abres la puerta lentamente. Dentro est\u00e1 oscuro, pero ves luces de colores al fondo del edificio. Escuchas m\u00fasica suave y voces alegres.","Esto no parece peligroso... pero \u00bfpor qu\u00e9 tanto secreto?"],c:[{t:"Caminar hacia las luces",n:"sorpresa"},{t:"Buscar un interruptor de luz cerca de la puerta",n:"interruptor"}],e:"\uD83D\uDD11"},
+mercado_marcos:{t:"Cap\u00edtulo 4: Con Marcos",p:["Marcos te lleva por un camino corto hasta el mercado viejo.","\u2014Mira \u2014dice Marcos\u2014, todo el pueblo prepar\u00f3 algo especial. Pero esta ma\u00f1ana, la electricidad del mercado dej\u00f3 de funcionar. Sin electricidad no pueden terminar. Tu abuela es la organizadora principal.","\u2014\u00bfOrganizar qu\u00e9? \u2014preguntas.","\u2014No puedo decirte. Es un secreto. Pero t\u00fa eres bueno/a con las cosas pr\u00e1cticas, \u00bfno? Necesitan ayuda con la electricidad.","Llegas a la puerta de atr\u00e1s del mercado."],c:[{t:"Entrar y ofrecer ayuda",n:"ayudar"},{t:"Entrar sin hacer ruido para ver primero",n:"entrar_silencio"}],e:"\uD83D\uDEB6"},
+entrar_silencio:{t:"Cap\u00edtulo 5: En silencio",p:["Entras en silencio por la puerta de atr\u00e1s. Hay un pasillo largo y oscuro. Caminas despacio.","Al final del pasillo hay una cortina grande de color rojo. Detr\u00e1s de la cortina escuchas las voces con m\u00e1s claridad. Alguien dice:","\u2014\u00a1R\u00e1pido! Necesitamos terminar antes del mediod\u00eda.","Otra voz responde:","\u2014Sin luz es imposible. \u00bfD\u00f3nde est\u00e1n las velas?","Abres la cortina un poco y miras..."],c:[{t:"Abrir la cortina completamente",n:"sorpresa"},{t:"Decir: Perd\u00f3n, \u00bfnecesitan ayuda?",n:"ayudar"}],e:"\uD83C\uDFAD"},
+entrar_gritando:{t:"Cap\u00edtulo 5: \u00a1Abuela!",p:["\u2014\u00a1ABUELA! \u00bfEST\u00c1S AH\u00cd? \u2014gritas con fuerza.","De repente, todo queda en silencio dentro del edificio. Escuchas pasos r\u00e1pidos. La puerta de atr\u00e1s se abre y aparece tu abuela con cara de sorpresa.","\u2014\u00a1\u00bfQu\u00e9 haces aqu\u00ed?! \u2014dice ella, nerviosa pero sonriendo\u2014. \u00a1No deber\u00edas estar aqu\u00ed todav\u00eda!","\u2014\u00bfTodav\u00eda? \u00bfQu\u00e9 pasa, abuela?","Tu abuela suspira.","\u2014Bueno... ya est\u00e1s aqu\u00ed. Entra. Pero cierra los ojos."],c:[{t:"Cerrar los ojos y entrar con tu abuela",n:"sorpresa"},{t:"Entrar con los ojos abiertos",n:"sorpresa_parcial"}],e:"\uD83D\uDCE2"},
+interruptor:{t:"Cap\u00edtulo 5: La luz",p:["Buscas el interruptor de la luz en la pared cerca de la puerta. Lo encuentras y lo presionas. Nada pasa. La electricidad no funciona.","Pero ahora puedes ver un poco mejor. Hay mesas largas con manteles blancos. Hay cajas en el suelo. Ves flores, globos desinflados y... \u00bfun pastel enorme?","De repente, alguien enciende una linterna.","\u2014\u00bfQui\u00e9n est\u00e1 ah\u00ed? \u2014es la voz de tu abuela."],c:[{t:"Abuela, soy yo. \u00bfQu\u00e9 es todo esto?",n:"sorpresa_parcial"},{t:"Intentar arreglar la electricidad",n:"electricidad"}],e:"\uD83D\uDCA1"},
+ayudar:{t:"Cap\u00edtulo 5: La ayuda",p:["Entras y dices en voz alta:","\u2014Hola, soy yo. Marcos me dijo que necesitan ayuda con la electricidad.","Tu abuela aparece con una linterna.","\u2014\u00a1Ay, mi vida! No deber\u00edas saber nada todav\u00eda... pero s\u00ed, necesitamos ayuda. La caja de fusibles est\u00e1 en el s\u00f3tano, pero nadie quiere bajar. Est\u00e1 muy oscuro y hay muchas ara\u00f1as.","\u2014Yo bajo \u2014dices.","Tu abuela te da la linterna y se\u00f1ala una escalera."],c:[{t:"Bajar al s\u00f3tano",n:"electricidad"},{t:"Preguntar primero: \u00bfQu\u00e9 es todo esto, abuela?",n:"sorpresa_parcial"}],e:"\uD83E\uDD1D"},
+electricidad:{t:"Cap\u00edtulo 6: El s\u00f3tano",p:["Bajas al s\u00f3tano con la linterna. Hay cajas viejas, telara\u00f1as y mucho polvo. Encuentras la caja de fusibles en la pared.","Uno de los fusibles est\u00e1 en posici\u00f3n de \u00abapagado\u00bb. Lo cambias a \u00abencendido\u00bb.","\u00a1CLIC!","De repente, todas las luces del edificio se encienden. Desde arriba escuchas gritos de alegr\u00eda. Subes las escaleras corriendo y..."],c:[{t:"Subir corriendo",n:"final_heroe"}],e:"\u26A1"},
+sorpresa:{t:"Cap\u00edtulo 6: \u00a1Sorpresa!",p:["Abres los ojos (o la cortina) y ves algo incre\u00edble.","Todo el pueblo est\u00e1 aqu\u00ed. Hay globos, flores, un pastel enorme con tu nombre y una pancarta gigante que dice:","\u00ab\u00a1FELIZ CUMPLEA\u00d1OS!\u00bb","\u00a1Es tu cumplea\u00f1os! \u00a1Lo olvidaste completamente!","Tu abuela te abraza.","\u2014Quer\u00edamos darte una sorpresa \u2014dice\u2014. Todo el pueblo ayud\u00f3. Don Roberto hizo el pastel. Do\u00f1a Carmen cosi\u00f3 la pancarta.","Todos aplauden y la m\u00fasica empieza a sonar. Es la mejor fiesta de tu vida."],c:[{t:"Leer el final",n:"final_fiesta"}],e:"\uD83C\uDF8A"},
+sorpresa_parcial:{t:"Cap\u00edtulo 6: El secreto revelado",p:["Tu abuela suspira y sonr\u00ede.","\u2014Es una fiesta sorpresa... para TI. Es tu cumplea\u00f1os, \u00bfrecuerdas?","\u00a1Tu cumplea\u00f1os! \u00a1Lo olvidaste!","Miras alrededor. Hay mesas con comida, un pastel con tu nombre, globos y flores. Todo el pueblo trabaj\u00f3 en esta fiesta. Pero sin electricidad, no pueden poner la m\u00fasica ni las luces de colores.","\u2014Ay\u00fadanos a terminar \u2014dice tu abuela\u2014. La caja de fusibles est\u00e1 en el s\u00f3tano."],c:[{t:"Bajar al s\u00f3tano a arreglar la electricidad",n:"electricidad"},{t:"Decir: \u00a1No importa la luz! \u00a1Celebremos ahora!",n:"final_velas"}],e:"\uD83C\uDF82"},
+final_fiesta:{t:"\uD83C\uDF89 Final: La gran fiesta",p:["La fiesta es maravillosa. Comes pastel, bailas con tus vecinos y recibes muchos regalos.","Pero el mejor regalo es saber que todo un pueblo trabaj\u00f3 junto para hacerte feliz.","Antes de dormir, tu abuela te dice:","\u2014\u00bfVes? En San Mart\u00edn somos como una familia. Siempre.","Sonr\u00edes. Es verdad. Este peque\u00f1o pueblo es el mejor lugar del mundo.","\u2014 FIN \u2014","Encontraste el final \u00abLa Gran Fiesta\u00bb. \u00a1Hay otros finales! \u00bfPuedes encontrarlos todos?"],c:[{t:"\uD83D\uDD04 Jugar otra vez",n:"start"}],e:"\uD83C\uDF89",end:true},
+final_heroe:{t:"\u26A1 Final: El h\u00e9roe del pueblo",p:["Subes las escaleras corriendo. El mercado viejo est\u00e1 completamente iluminado con luces de colores. Hay globos, m\u00fasica, flores y un pastel gigante con tu nombre.","\u00ab\u00a1FELIZ CUMPLEA\u00d1OS!\u00bb gritan todos.","\u00a1Es tu cumplea\u00f1os! \u00a1Lo olvidaste!","Tu abuela te abraza.","\u2014\u00a1Y adem\u00e1s arreglaste la electricidad! \u00a1Eres el h\u00e9roe de tu propia fiesta!","Todos r\u00eden y aplauden. Es la mejor fiesta de cumplea\u00f1os de tu vida. Y t\u00fa la salvaste.","\u2014 FIN \u2014","Encontraste el final \u00abEl H\u00e9roe\u00bb. \u00a1Hay otros finales! \u00bfPuedes encontrarlos todos?"],c:[{t:"\uD83D\uDD04 Jugar otra vez",n:"start"}],e:"\u26A1",end:true},
+final_velas:{t:"\uD83D\uDD6F\uFE0F Final: La fiesta de las velas",p:["\u2014\u00a1No necesitamos electricidad! \u2014dices\u2014. \u00a1Usemos velas!","Todo el pueblo busca velas. En pocos minutos, el mercado viejo est\u00e1 lleno de la luz c\u00e1lida de cien velas. Es m\u00e1gico. Es m\u00e1s bonito que cualquier luz el\u00e9ctrica.","\u00ab\u00a1FELIZ CUMPLEA\u00d1OS!\u00bb cantan todos.","Bailas, comes pastel y r\u00edes con tus vecinos. La luz de las velas hace que todo parezca un sue\u00f1o hermoso.","Tu abuela dice:","\u2014Esta es la fiesta m\u00e1s bonita que hemos tenido. Gracias a ti.","\u2014 FIN \u2014","Encontraste el final \u00abLas Velas\u00bb. \u00a1Hay otros finales! \u00bfPuedes encontrarlos todos?"],c:[{t:"\uD83D\uDD04 Jugar otra vez",n:"start"}],e:"\uD83D\uDD6F\uFE0F",end:true}
+};
+
+var VC=[["manchas de barro","mud stains"],["arrugado","crumpled"],["candado","padlock"],["cortina","curtain"],["fusibles","fuses"],["telara\u00f1as","cobwebs"],["pancarta","banner"],["grabadas","engraved"],["interruptor","switch"],["desinflados","deflated"],["linterna","flashlight"],["s\u00f3tano","basement"],["suspirar","to sigh"],["aplauden","they clap"]];
+
+var cur="start",hist=["start"],vOpen=false;
+
+var $=function(id){return document.getElementById(id)};
+
+function mk(tag,cls,txt){
+  var el=document.createElement(tag);
+  if(cls)el.className=cls;
+  if(txt)el.textContent=txt;
+  return el;
+}
+
+function initVocab(){
+  var g=$("vocabGrid");
+  for(var i=0;i<VC.length;i++){
+    var d=mk("div","vi");
+    var s1=mk("span","es",VC[i][0]);
+    var s2=mk("span","en"," \u2014 "+VC[i][1]);
+    d.appendChild(s1);d.appendChild(s2);g.appendChild(d);
+  }
+}
+
+function render(){
+  var d=SC[cur];
+  $("emoji").textContent=d.e;
+  $("title").textContent=d.t;
+  $("progressLabel").textContent="Escena "+hist.length;
+  $("progressBar").style.width=Math.min((hist.length/7)*100,100)+"%";
+
+  var st=$("story");
+  st.innerHTML="";
+  for(var i=0;i<d.p.length;i++){
+    var txt=d.p[i];
+    var isDlg=txt.charAt(0)==="\u2014"||txt.charAt(0)==="\u00ab";
+    var p=mk("p",isDlg?"d":"i",txt);
+    st.appendChild(p);
+  }
+
+  var ch=$("choices");
+  ch.innerHTML="";
+  if(!d.end){
+    var lbl=mk("p","","");
+    lbl.textContent="\u00bfQu\u00e9 haces?";
+    lbl.style.fontSize="11px";
+    lbl.style.textTransform="uppercase";
+    lbl.style.letterSpacing="0.12em";
+    lbl.style.color="#8a7a68";
+    lbl.style.margin="0 0 4px 0";
+    lbl.style.fontFamily="system-ui,sans-serif";
+    ch.appendChild(lbl);
+  }
+  for(var j=0;j<d.c.length;j++){
+    var btn=mk("button","cb");
+    var lt=mk("span","lt",String.fromCharCode(65+j));
+    btn.appendChild(lt);
+    btn.appendChild(document.createTextNode(d.c[j].t));
+    (function(next){
+      btn.addEventListener("click",function(){goTo(next)});
+    })(d.c[j].n);
+    ch.appendChild(btn);
+  }
+
+  $("backBtn").className=hist.length>1?"show":"";
+}
+
+function goTo(next){
+  var c=$("content");
+  c.className="hide";
+  setTimeout(function(){
+    cur=next;
+    if(next==="start"){hist=["start"]}else{hist.push(next)}
+    render();
+    c.className="";
+    window.scrollTo({top:0,behavior:"smooth"});
+  },250);
+}
+
+function goBack(){
+  if(hist.length<2)return;
+  var c=$("content");
+  c.className="hide";
+  setTimeout(function(){
+    hist.pop();
+    cur=hist[hist.length-1];
+    render();
+    c.className="";
+  },250);
+}
+
+$("vocabBtn").addEventListener("click",function(){
+  vOpen=!vOpen;
+  $("vocabPanel").className=vOpen?"open":"";
+  $("vocabBtn").className=vOpen?"on":"";
+  $("vocabBtn").textContent=vOpen?"\u2715 Cerrar":"\uD83D\uDCDA Vocab";
+});
+
+$("backBtn").addEventListener("click",goBack);
+
+initVocab();
+render();
+})();
+</script>
+</body>
+</html>
